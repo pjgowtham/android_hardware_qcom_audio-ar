@@ -38,6 +38,10 @@
         }                                                                      \
     } while (0)
 
+using ::aidl::android::media::audio::common::AudioFormatDescription;
+using ::aidl::android::media::audio::common::AudioFormatType;
+using ::aidl::android::media::audio::common::PcmType;
+
 namespace qti::audio::core {
 
 bool Lvacfs::isLvacfsEnabled() {
@@ -104,7 +108,25 @@ void Lvacfs::deinit() {
     ALOGI("LVACFS deinitialized");
 }
 
+// Values match tinyalsa's pcm_format enum in tinyalsa/asoundlib.h.
+static int lvacfs_format_from_audio_format(const AudioFormatDescription& format) {
+    if (format.type != AudioFormatType::PCM) return -1;
+    switch (format.pcm) {
+        case PcmType::INT_16_BIT: return 0;    // PCM_FORMAT_S16_LE
+        case PcmType::INT_32_BIT: return 1;    // PCM_FORMAT_S32_LE
+        case PcmType::FIXED_Q_8_24: return 3;  // PCM_FORMAT_S24_LE
+        case PcmType::INT_24_BIT: return 4;    // PCM_FORMAT_S24_3LE
+        default: return -1;                    // PCM_FORMAT_INVALID
+    }
+}
+
 void Lvacfs::startInputStream(StreamInPrimary* in) {
+    const auto& audio_format = in->mMixPortConfig.format.value();
+    int format = lvacfs_format_from_audio_format(audio_format);
+    if (format < 0) {
+        ALOGE("Unsupported audio format: %s", audio_format.toString().c_str());
+        return;
+    }
     in->mLvacfsHandle = (void**)calloc(1, sizeof(void*));
     if (!in->mLvacfsHandle) {
         ALOGE("Failed to allocate lvacfs_handle");
@@ -113,9 +135,8 @@ void Lvacfs::startInputStream(StreamInPrimary* in) {
     wrapper_ops_->set_params_file_path(params_file_path_);
     int channel_count = getChannelCount(in->mMixPortConfig.channelMask.value());
     uint32_t channels = ((channel_count & 0xFFFF) << 16) | (channel_count & 0xFFFF);
-    // Set format to false (0) since lvacfs does not support pal audio format
     uint64_t sample_rate_and_format =
-            ((uint64_t)0 << 32) | in->mMixPortConfig.sampleRate.value().value;
+            ((uint64_t)format << 32) | in->mMixPortConfig.sampleRate.value().value;
     const auto source = getAudioSource(in->mMixPortConfig);
     int ret = wrapper_ops_->create_instance(
             in->mLvacfsHandle, source ? static_cast<uint32_t>(source.value()) : AUDIO_SOURCE_DEFAULT,
