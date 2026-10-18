@@ -4502,6 +4502,9 @@ int StreamInPrimary::SetParameters(const char* kvpairs) {
         }
     }
 
+    if (lvacfs.getWrapperOps()) {
+        lvacfs.setParameters(parms);
+    }
     str_parms_destroy(parms);
 exit:
    AHAL_DBG("exit %d", ret);

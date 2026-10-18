@@ -8,6 +8,7 @@
 #include <AudioStream.h>
 #include <Lvacfs.h>
 #include <LvacfsDeviceProfiles.h>
+#include <cutils/str_parms.h>
 #include <cstring>
 #include <dlfcn.h>
 #include <log/log.h>
@@ -96,6 +97,17 @@ void Lvacfs::deinit() {
     ALOGI("LVACFS deinitialized");
 }
 
+void Lvacfs::setParameters(struct str_parms* parms) {
+    char mode[32];
+    if (str_parms_get_str(parms, "local_record_mode", mode, sizeof(mode)) < 0) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(lock_);
+    scene_ = !strcmp(mode, "interview") ? lvacfs::Scene::INTERVIEW
+           : !strcmp(mode, "conference") ? lvacfs::Scene::CONFERENCE
+                                         : lvacfs::Scene::DEFAULT;
+}
+
 // Values match tinyalsa's pcm_format enum in tinyalsa/asoundlib.h.
 static int lvacfs_format_from_audio_format(audio_format_t format) {
     switch (format) {
@@ -117,7 +129,7 @@ int Lvacfs::getProfile(StreamInPrimary* in) const {
         *in->mAndroidInDevices.begin(),
         in->config_.sample_rate,
         audio_channel_count_from_in_mask(in->config_.channel_mask),
-        lvacfs::Scene::DEFAULT,
+        scene_,
     });
 }
 
@@ -149,6 +161,7 @@ void Lvacfs::startInputStream(StreamInPrimary* in) {
         in->lvacfs_handle = nullptr;
         return;
     }
+    in->lvacfs_profile = profile;
 }
 
 void Lvacfs::processInputStream(StreamInPrimary* in, void* buffer, size_t bytes) {
@@ -156,7 +169,17 @@ void Lvacfs::processInputStream(StreamInPrimary* in, void* buffer, size_t bytes)
     int channel_count = audio_channel_count_from_in_mask(in->config_.channel_mask);
     uint32_t num_frames = bytes / (channel_count * audio_bytes_per_sample(in->config_.format));
     uint8_t status_buffer[0x160] = {0};
-    int ret = wrapper_ops_->process(in->lvacfs_handle, buffer, buffer, num_frames, status_buffer);
+    int profile = getProfile(in);
+    int ret = profile < 0 ? -EINVAL : 0;
+    if (!ret && in->lvacfs_profile != uint32_t(profile)) {
+        ret = wrapper_ops_->set_profile(in->lvacfs_handle, profile);
+        if (!ret) {
+            in->lvacfs_profile = profile;
+        }
+    }
+    if (!ret) {
+        ret = wrapper_ops_->process(in->lvacfs_handle, buffer, buffer, num_frames, status_buffer);
+    }
     if (ret) {
         ALOGE("process failed: %d", ret);
         destroyInstance(in);

@@ -1423,6 +1423,9 @@ int AudioDevice::SetParameters(const char *kvpairs) {
         ret = 0;
         return ret;
     }
+    if (Lvacfs::getInstance().getWrapperOps()) {
+        Lvacfs::getInstance().setParameters(parms);
+    }
     AudioExtn::audio_extn_set_parameters(adev_, parms);
 
     if (property_get_bool("vendor.audio.hdr.record.enable", false)) {

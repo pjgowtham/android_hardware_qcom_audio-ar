@@ -612,6 +612,7 @@ private:
     ssize_t onReadError(size_t bytes, size_t ret);
     friend class Lvacfs;
     void** lvacfs_handle = nullptr;
+    uint32_t lvacfs_profile = 0;
     Lvacfs& lvacfs;
 public:
     StreamInPrimary(audio_io_handle_t handle,

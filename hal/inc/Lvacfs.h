@@ -7,10 +7,12 @@
 
 #include <mutex>
 
+#include "LvacfsProfileConfig.h"
 #include "PalApi.h"
 #include "PalDefs.h"
 
 class StreamInPrimary;
+struct str_parms;
 
 struct lvacfs_wrapper_ops {
     void* lib_handle;
@@ -36,6 +38,7 @@ class Lvacfs {
     static bool isLvacfsEnabled();
     void init();
     void deinit();
+    void setParameters(struct str_parms* parms);
     void startInputStream(StreamInPrimary* in);
     void processInputStream(StreamInPrimary* in, void* buffer, size_t bytes);
     void stopInputStream(StreamInPrimary* in);
@@ -55,4 +58,5 @@ class Lvacfs {
     const char* params_file_path_;
     // The wrapper shares its params path between instances.
     std::mutex lock_;
+    lvacfs::Scene scene_ = lvacfs::Scene::DEFAULT;
 };
