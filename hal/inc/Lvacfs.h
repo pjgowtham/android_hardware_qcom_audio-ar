@@ -46,6 +46,8 @@ class Lvacfs {
     Lvacfs(const Lvacfs&) = delete;
     Lvacfs& operator=(const Lvacfs&) = delete;
 
+    int getProfile(StreamInPrimary* in) const;
+
     std::unique_ptr<struct lvacfs_wrapper_ops> wrapper_ops_;
     const char* params_file_path_;
 };

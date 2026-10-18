@@ -107,7 +107,25 @@ static int lvacfs_format_from_audio_format(audio_format_t format) {
     }
 }
 
+int Lvacfs::getProfile(StreamInPrimary* in) const {
+    if (in->is_st_session || in->usecase_ == USECASE_AUDIO_RECORD_MMAP ||
+        in->mAndroidInDevices.size() != 1) {
+        return -1;
+    }
+    return lvacfs::selectProfile({
+        in->source_,
+        *in->mAndroidInDevices.begin(),
+        in->config_.sample_rate,
+        audio_channel_count_from_in_mask(in->config_.channel_mask),
+        lvacfs::Scene::DEFAULT,
+    });
+}
+
 void Lvacfs::startInputStream(StreamInPrimary* in) {
+    int profile = getProfile(in);
+    if (profile < 0) {
+        return;
+    }
     int format = lvacfs_format_from_audio_format(in->config_.format);
     if (format < 0) {
         ALOGE("Unsupported audio format: %#x", in->config_.format);
@@ -122,7 +140,7 @@ void Lvacfs::startInputStream(StreamInPrimary* in) {
     int channel_count = audio_channel_count_from_in_mask(in->config_.channel_mask);
     uint32_t channels = ((channel_count & 0xFFFF) << 16) | (channel_count & 0xFFFF);
     uint64_t sample_rate_and_format = ((uint64_t)format << 32) | in->config_.sample_rate;
-    int ret = wrapper_ops_->create_instance(in->lvacfs_handle, in->source_, sample_rate_and_format,
+    int ret = wrapper_ops_->create_instance(in->lvacfs_handle, profile, sample_rate_and_format,
                                             channels);
     if (ret) {
         ALOGE("create instance failed: %d", ret);
