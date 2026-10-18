@@ -55,16 +55,12 @@ void Lvacfs::init() {
     }
 
     wrapper_ops_ = std::make_unique<struct lvacfs_wrapper_ops>();
-    if (!wrapper_ops_) {
-        ALOGE("Failed to allocate lvacfs_wrapper_ops");
-        return;
-    }
-
     wrapper_ops_->lib_handle = dlopen(ODM_LIB_PATH, RTLD_NOW);
     if (!wrapper_ops_->lib_handle) {
         wrapper_ops_->lib_handle = dlopen(VENDOR_LIB_PATH, RTLD_NOW);
         if (!wrapper_ops_->lib_handle) {
             ALOGE("dlopen failed for %s and %s: %s", ODM_LIB_PATH, VENDOR_LIB_PATH, dlerror());
+            deinit();
             return;
         }
     }

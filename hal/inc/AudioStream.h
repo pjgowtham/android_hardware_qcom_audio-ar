@@ -611,7 +611,7 @@ private:
     //Helper method to standby streams upon read failures and sleep for buffer duration.
     ssize_t onReadError(size_t bytes, size_t ret);
     friend class Lvacfs;
-    void** lvacfs_handle;
+    void** lvacfs_handle = nullptr;
     std::mutex lvacfs_lock;
     Lvacfs& lvacfs;
 public:
