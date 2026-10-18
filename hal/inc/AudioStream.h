@@ -612,7 +612,6 @@ private:
     ssize_t onReadError(size_t bytes, size_t ret);
     friend class Lvacfs;
     void** lvacfs_handle = nullptr;
-    std::mutex lvacfs_lock;
     Lvacfs& lvacfs;
 public:
     StreamInPrimary(audio_io_handle_t handle,

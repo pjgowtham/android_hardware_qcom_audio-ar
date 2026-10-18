@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <mutex>
+
 #include "PalApi.h"
 #include "PalDefs.h"
 
@@ -47,7 +49,10 @@ class Lvacfs {
     Lvacfs& operator=(const Lvacfs&) = delete;
 
     int getProfile(StreamInPrimary* in) const;
+    void destroyInstance(StreamInPrimary* in);
 
     std::unique_ptr<struct lvacfs_wrapper_ops> wrapper_ops_;
     const char* params_file_path_;
+    // The wrapper shares its params path between instances.
+    std::mutex lock_;
 };

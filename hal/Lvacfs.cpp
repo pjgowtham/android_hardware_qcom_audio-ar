@@ -122,6 +122,7 @@ int Lvacfs::getProfile(StreamInPrimary* in) const {
 }
 
 void Lvacfs::startInputStream(StreamInPrimary* in) {
+    std::lock_guard<std::mutex> lock(lock_);
     int profile = getProfile(in);
     if (profile < 0) {
         return;
@@ -151,18 +152,23 @@ void Lvacfs::startInputStream(StreamInPrimary* in) {
 }
 
 void Lvacfs::processInputStream(StreamInPrimary* in, void* buffer, size_t bytes) {
-    std::lock_guard<std::mutex> lock(in->lvacfs_lock);
+    std::lock_guard<std::mutex> lock(lock_);
     int channel_count = audio_channel_count_from_in_mask(in->config_.channel_mask);
     uint32_t num_frames = bytes / (channel_count * audio_bytes_per_sample(in->config_.format));
     uint8_t status_buffer[0x160] = {0};
     int ret = wrapper_ops_->process(in->lvacfs_handle, buffer, buffer, num_frames, status_buffer);
     if (ret) {
         ALOGE("process failed: %d", ret);
-        stopInputStream(in);
+        destroyInstance(in);
     }
 }
 
 void Lvacfs::stopInputStream(StreamInPrimary* in) {
+    std::lock_guard<std::mutex> lock(lock_);
+    destroyInstance(in);
+}
+
+void Lvacfs::destroyInstance(StreamInPrimary* in) {
     int ret = wrapper_ops_->destroy_instance(in->lvacfs_handle);
     if (ret) {
         ALOGE("destroy instance failed: %d", ret);
