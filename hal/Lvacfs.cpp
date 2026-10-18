@@ -7,6 +7,7 @@
 
 #include <AudioStream.h>
 #include <Lvacfs.h>
+#include <cstring>
 #include <dlfcn.h>
 #include <log/log.h>
 
@@ -122,9 +123,11 @@ void Lvacfs::startInputStream(StreamInPrimary* in) {
     uint64_t sample_rate_and_format = ((uint64_t)format << 32) | in->config_.sample_rate;
     int ret = wrapper_ops_->create_instance(in->lvacfs_handle, in->source_, sample_rate_and_format,
                                             channels);
-    if (ret < 0) {
+    if (ret) {
         ALOGE("create instance failed: %d", ret);
-        stopInputStream(in);
+        free(in->lvacfs_handle);
+        in->lvacfs_handle = nullptr;
+        return;
     }
 }
 
@@ -134,7 +137,7 @@ void Lvacfs::processInputStream(StreamInPrimary* in, void* buffer, size_t bytes)
     uint32_t num_frames = bytes / (channel_count * audio_bytes_per_sample(in->config_.format));
     uint8_t status_buffer[0x160] = {0};
     int ret = wrapper_ops_->process(in->lvacfs_handle, buffer, buffer, num_frames, status_buffer);
-    if (ret < 0) {
+    if (ret) {
         ALOGE("process failed: %d", ret);
         stopInputStream(in);
     }
@@ -142,7 +145,7 @@ void Lvacfs::processInputStream(StreamInPrimary* in, void* buffer, size_t bytes)
 
 void Lvacfs::stopInputStream(StreamInPrimary* in) {
     int ret = wrapper_ops_->destroy_instance(in->lvacfs_handle);
-    if (ret < 0) {
+    if (ret) {
         ALOGE("destroy instance failed: %d", ret);
     }
     free(in->lvacfs_handle);

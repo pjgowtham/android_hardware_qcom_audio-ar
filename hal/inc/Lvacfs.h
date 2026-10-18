@@ -13,15 +13,15 @@ class StreamInPrimary;
 struct lvacfs_wrapper_ops {
     void* lib_handle;
     int (*create_instance)(void**, uint32_t, uint64_t, uint32_t);
-    int (*destroy_instance)(void*);
-    int (*process)(void*, void*, void*, int32_t, void*);
-    void (*update_zoom_info)(void*, float);
-    void (*update_angle_info)(void*, float);
+    int (*destroy_instance)(void**);
+    int (*process)(void**, void*, void*, size_t, void*);
+    int (*update_zoom_info)(void**, float, int32_t);
+    int (*update_angle_info)(void**, int32_t);
     void (*set_params_file_path)(const char*);
-    void (*set_profile)(void*, uint32_t);
-    void (*set_audio_direction)(void*, uint32_t);
-    void (*set_device_orientation)(void*, uint32_t);
-    void (*get_versions)(char*, size_t);
+    int (*set_profile)(void**, uint32_t);
+    int (*set_audio_direction)(void**, uint32_t);
+    int (*set_device_orientation)(void**, uint32_t);
+    void (*get_versions)(char*);
 };
 
 class Lvacfs {
