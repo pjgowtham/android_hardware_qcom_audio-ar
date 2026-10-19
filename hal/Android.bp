@@ -4,6 +4,12 @@ cc_library_headers {
     export_include_dirs: ["inc"],
 }
 
+cc_library_headers {
+    name: "liblvacfs_default_headers",
+    vendor: true,
+    export_include_dirs: ["lvacfs/default"],
+}
+
 soong_config_module_type {
     name: "target_board_platform_cc_library_shared",
     module_type: "cc_library_shared",
@@ -115,7 +121,10 @@ target_board_platform_cc_library_shared {
         "libaudio_extn_headers",
         "libaudio_system_headers",
         "libhardware_headers",
-    ] + select(soong_config_variable("qtiaudio", "ultrasound_proximity"), {
+    ] + select(soong_config_variable("qtiaudio", "lvacfs_headers"), {
+        any @ headers: [headers],
+        default: ["liblvacfs_default_headers"],
+    }) + select(soong_config_variable("qtiaudio", "ultrasound_proximity"), {
         "true": [
             "libacdb_headers",
             "libarosal_headers",

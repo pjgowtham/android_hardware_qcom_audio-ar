@@ -7,6 +7,7 @@
 
 #include <AudioStream.h>
 #include <Lvacfs.h>
+#include <LvacfsDeviceProfiles.h>
 #include <cstring>
 #include <dlfcn.h>
 #include <log/log.h>
