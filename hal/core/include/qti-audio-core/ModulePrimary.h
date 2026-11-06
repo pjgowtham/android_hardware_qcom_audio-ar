@@ -31,6 +31,7 @@ namespace qti::audio::core {
 class ModulePrimary final : public Module {
   public:
     ModulePrimary();
+    ~ModulePrimary() override;
 
     // #################### start of overriding APIs from IModule ####################
     binder_status_t dump(int fd, const char** args, uint32_t numArgs) override;

@@ -7,6 +7,7 @@
 
 #include <aidl/android/hardware/audio/core/MmapBufferDescriptor.h>
 #include <qti-audio-core/AudioUsecase.h>
+#include <qti-audio-core/Lvacfs.h>
 #include <qti-audio-core/MmapBufferImpl.h>
 #include <qti-audio-core/Stream.h>
 #include <system/audio_effects/effect_uuid.h>
@@ -121,6 +122,10 @@ class StreamInPrimary : public StreamIn, public StreamCommonImpl, public MmapBuf
     std::string mLogPrefix = "";
     int32_t isECEnabledCount = 0;
     int32_t isNSEnabledCount = 0;
+    friend class Lvacfs;
+    void** mLvacfsHandle{nullptr};
+    std::mutex mLvacfsLock;
+    Lvacfs& mLvacfs{Lvacfs::getInstance()};
 };
 
 } // namespace qti::audio::core

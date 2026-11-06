@@ -409,6 +409,10 @@ void StreamInPrimary::resume() {
         *actualFrameCount = static_cast<size_t>(bytesRead) / mFrameSizeBytes;
     }
 
+    if (mLvacfs.getWrapperOps() && mLvacfsHandle) {
+        mLvacfs.processInputStream(this, palBuffer.buffer, palBuffer.size);
+    }
+
 #ifdef VERY_VERBOSE_LOGGING
     LOG(VERBOSE) << __func__ << mLogPrefix << ": bytes read " << bytesRead << ", return frame count "
                  << *actualFrameCount;
@@ -828,6 +832,10 @@ void StreamInPrimary::configure() {
     if (!mEffectsApplied)
         applyEffects();
 
+    if (mLvacfs.getWrapperOps() && !mLvacfsHandle) {
+        mLvacfs.startInputStream(this);
+    }
+
     LOG(DEBUG) << __func__ << mLogPrefix << " : stream is configured";
 
     const auto endTime = std::chrono::steady_clock::now();
@@ -896,6 +904,10 @@ void StreamInPrimary::shutdown_I() {
         std::get<CompressCapture>(mExt).setPalHandle(nullptr);
     }
     mPalHandle = nullptr;
+
+    if (mLvacfs.getWrapperOps() && mLvacfsHandle) {
+        mLvacfs.stopInputStream(this);
+    }
 }
 
 ::android::status_t StreamInPrimary::burstZero() {

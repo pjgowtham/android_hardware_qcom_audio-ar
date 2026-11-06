@@ -32,6 +32,7 @@
 
 #include <aidl/qti/audio/core/VString.h>
 #include <qti-audio-core/Bluetooth.h>
+#include <qti-audio-core/Lvacfs.h>
 #include <qti-audio-core/ModulePrimary.h>
 #include <qti-audio-core/Parameters.h>
 #include <qti-audio-core/PlatformUtils.h>
@@ -167,6 +168,15 @@ binder_status_t ModulePrimary::dump(int fd, const char** args, uint32_t numArgs)
 
 ModulePrimary::ModulePrimary() : Module(Type::DEFAULT) {
     mOffloadSpeedSupported = mPlatform.platformSupportsOffloadSpeed();
+    if (Lvacfs::isLvacfsEnabled()) {
+        Lvacfs::getInstance().init();
+    }
+}
+
+ModulePrimary::~ModulePrimary() {
+    if (Lvacfs::isLvacfsEnabled()) {
+        Lvacfs::getInstance().deinit();
+    }
 }
 
 ndk::ScopedAStatus ModulePrimary::getMicrophones(std::vector<MicrophoneInfo>* _aidl_return) {
